@@ -1,0 +1,9 @@
+2020-10-17 16:44:50,629[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STARTED] admin_panel.launcher.Start@5334630e application.
+2020-10-17 16:48:04,119[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STARTED] admin_panel.launcher.Start@408dcfe4 application.
+2020-10-17 16:49:16,775[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STARTED] admin_panel.launcher.Start@81eb67a application.
+2020-10-17 16:49:18,789[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STOP] admin_panel.launcher.Start@81eb67a application.
+2020-10-17 17:05:05,255[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STARTED] admin_panel.launcher.Start@6479fd4e application.
+2020-10-17 17:05:09,525[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STOP] admin_panel.launcher.Start@6479fd4e application.
+2020-10-17 17:12:00,074[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STARTED] admin_panel.launcher.Start@64c3bb73 application.
+2020-10-17 17:12:01,094[INFO ][DBConnection   ][admin_panel.database.DBConnection] - [STARTED] DBConnection. DB url: jdbc:mysql://localhost:3306/www?useSSL=false
+2020-10-17 17:12:52,790[INFO ][JavaFX Application Thread][    admin_panel.launcher.Start] - [STOP] admin_panel.launcher.Start@64c3bb73 application.

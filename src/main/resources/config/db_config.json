@@ -1,0 +1,10 @@
+{
+  "config" : {
+    "type" : "mysql",
+    "host" : "localhost",
+    "name" : "www",
+    "port" : "3306",
+    "password" : "root",
+    "login" : "root"
+  }
+}
