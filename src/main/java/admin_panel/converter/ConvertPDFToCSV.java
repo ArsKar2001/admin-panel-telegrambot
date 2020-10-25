@@ -2,10 +2,18 @@ package admin_panel.converter;
 
 import com.giaybac.traprange.PDFTableExtractor;
 import com.giaybac.traprange.entity.Table;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.pdf.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.io.RandomAccessFile;
@@ -50,53 +58,25 @@ public class ConvertPDFToCSV {
     }
 
     /**
-     * Конвертирование PDF в CSV через API traprange: https://github.com/thoqbk/traprange
-     * @param inputFile файл PDF
-     * @return
-     */
-    private File convertPDFtoCSV_traprange(File inputFile) {
-        String newFileName = replaceSuffix(inputFile.getName(), ".csv");
-        newFileName = "convert_" + newFileName;
-        String newPath = inputFile.getAbsoluteFile().getParent()+File.separator+newFileName;
-        File outFile = new File(newPath);
-
-        PDFTableExtractor extractor = (new PDFTableExtractor())
-                .setSource(inputFile)
-                .exceptLine(new int[]{0, 1});
-        List<Table> tables = extractor.extract();
-        try (Writer writer = new FileWriter(outFile)) {
-            for (Table table : tables) {
-                writer.write(table.toString());
-                writer.write("\n");
-            }
-        } catch (IOException e) {
-            LOG.error(e.getMessage());
-        }
-        LOG.debug("Convert the "+ inputFile.getName()+" to "+outFile.getName());
-        return outFile;
-    }
-
-    /**
      * Конвертирование PDF в CSV через API pdfBox. https://pdfbox.apache.org/
      * @param f
      * @return
      */
     private File convert_pdfbox(File f) {
-        String newFileName = replaceSuffix(f.getName(), ".txt");
-        String newPath = f.getAbsoluteFile().getParent()+File.separator+"convert_"+newFileName;
-        File outFile = new File(newPath);
+        String newFileName = "convert_"+inputFile.getName();
+        File outputFile = new File(getOutputFileName(newFileName, "csv"));
         try {
             PDFParser pdfParser = new PDFParser(new RandomAccessFile(f, "r"));
             pdfParser.parse();
             COSDocument cosDoc = pdfParser.getDocument();
             PDFTextStripper pdfStripper = new PDFTextStripper();
             PDDocument pdDoc = new PDDocument(cosDoc);
-            pdfStripper.writeText(pdDoc, new FileWriter(outFile));
+            pdfStripper.writeText(pdDoc, new FileWriter(outputFile));
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
-        LOG.debug("Convert the "+ f.getName()+" to "+outFile.getName());
-        return outFile;
+        LOG.debug("Convert the "+ f.getName()+" to "+ outputFile.getName());
+        return outputFile;
     }
 
     private static String replaceSuffix(String fileName, String suffix) {
@@ -119,9 +99,8 @@ public class ConvertPDFToCSV {
      * @return
      */
     private File cutPdfPages_pdfbox(File f) {
-        String newFileName = "cut_" + f.getName();
-        String newPath = f.getAbsoluteFile().getParent() + File.separator + newFileName;
-        File outFile = new File(newPath);
+        String newFileName = "convert_"+inputFile.getName();
+        File outputFile = new File(getOutputFileName(newFileName, "pdf"));
 
         try (PDDocument inputDoc = PDDocument.load(f)) {
             try (PDDocument outDoc = new PDDocument()) {
@@ -148,17 +127,51 @@ public class ConvertPDFToCSV {
                     page.setCropBox(bBox);
                     outDoc.importPage(page);
                 }
-                outDoc.save(outFile);
+                outDoc.save(outputFile);
             }
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
-        LOG.debug("split pages to " + f.getName()+"; new "+outFile.getName());
-        return outFile;
+        LOG.debug("split pages to " + f.getName()+"; new "+ outputFile.getName());
+        return outputFile;
     }
 
-    // Конвертирование PDF через сервис: https://pdftables.com
-    /*private File getConvertFile(File inputFile, String format, String api_key) {
+    /**
+     * Конвертирование PDF в CSV через API traprange: https://github.com/thoqbk/traprange
+     * @param inputFile файл PDF
+     * @return
+     */
+    private File convertPDFtoCSV_traprange(File inputFile) {
+        PDFTableExtractor extractor = (new PDFTableExtractor())
+                .setSource(inputFile)
+                .exceptLine(new int[]{0, 1});
+        String newFileName = "convert_"+inputFile.getName();
+        File outputFile = new File(getOutputFileName(newFileName, "csv"));
+
+        List<Table> tables = extractor.extract();
+        try (Writer writer = new FileWriter(outputFile)) {
+            for (Table table : tables) {
+                writer.write(table.toString());
+                writer.write("\n");
+            }
+        } catch (IOException e) {
+            LOG.error(e.getMessage());
+        }
+        LOG.debug("Convert the "+ inputFile.getName()+" to "+ outputFile.getName());
+        return outputFile;
+    }
+
+
+    /**
+     * Конвертирование PDF через сервис: https://pdftables.com
+     * Работает хорошо, но платный :(
+     * @param inputFile PDF файл
+     * @param format в какой формат конвертируем
+     * @param api_key
+     * @return
+     */
+    private File getConvertFile(File inputFile, String format, String api_key) {
+        String newFileName = "convert_"+inputFile.getName();
 
         LOG.info("[STARTED] ConvertPDFToCSV https://pdftables.com. File: "+pathToPDFFile+", format to ."+format);
         RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build();
@@ -182,7 +195,7 @@ public class ConvertPDFToCSV {
                 }
                 HttpEntity entity = httpResponse.getEntity();
                 if (entity != null) {
-                    final File outputFile = getNewOutFile(inputFile, "", ".csv");
+                    final File outputFile = new File(getOutputFileName(newFileName, format));
                     FileUtils.copyToFile(entity.getContent(), outputFile);
 
                     return outputFile;
@@ -195,5 +208,13 @@ public class ConvertPDFToCSV {
             LOG.error(e.getMessage(), e);
         }
         return null;
-    }*/
+    }
+
+    private static String getOutputFileName(String pdfFilename, String suffix) {
+        if (pdfFilename.length() >= 5 && pdfFilename.toLowerCase().endsWith(".pdf")) {
+            return pdfFilename.substring(0, pdfFilename.length() - 4) + "." + suffix;
+        } else {
+            return pdfFilename + "." + suffix;
+        }
+    }
 }
