@@ -12,9 +12,9 @@ public class Config {
     private static final String PATH_TO_DB_CONFIG = "src/main/resources/config/db_config.json";
     private static final String PATH_TO_BOT_CONFIG = "src/main/resources/config/bot_config.json";
 
-    private static JSONObject getJSON(String pathToFile) {
+    private static JSONObject getJSON() {
         JSONParser jsonParser = new JSONParser();
-        try (FileReader reader = new FileReader(pathToFile)) {
+        try (FileReader reader = new FileReader(Config.PATH_TO_DB_CONFIG)) {
             return (JSONObject) jsonParser.parse(reader);
         } catch (IOException | ParseException e) {
             e.printStackTrace();
@@ -23,13 +23,7 @@ public class Config {
     }
 
     public static JSONObject getDBConfig() {
-        JSONObject json = getJSON(PATH_TO_DB_CONFIG);
-        assert json != null;
-        return (JSONObject) json.get("config");
-    }
-
-    public static JSONObject getBOTConfig() {
-        JSONObject json = getJSON(PATH_TO_BOT_CONFIG);
+        JSONObject json = getJSON();
         assert json != null;
         return (JSONObject) json.get("config");
     }

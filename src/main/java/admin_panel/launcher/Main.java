@@ -11,28 +11,27 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
-public class Start extends Application {
+public class Main extends Application {
 
-    private static final Logger LOG = Logger.getLogger(Start.class);
+    private static final Logger LOG = Logger.getLogger(Main.class);
     private static final int PRIORITY_FOR_DB_CONNECT = 1;
 
     @Override
     public void start(Stage stage) throws Exception {
         LOG.info("[STARTED] "+toString()+" application.");
-        setPrimaryStage(stage);
-        setDBConnection();
+        startPrimaryStage(stage);
+        startDBConnection();
     }
 
-    private void setDBConnection() {
-        DBConnection dbConnection = new DBConnection();
-        Thread dbConnect = new Thread(dbConnection);
+    private void startDBConnection() {
+        Thread dbConnect = new Thread(new DBConnection());
         dbConnect.setDaemon(true);
         dbConnect.setName("DBConnection");
         dbConnect.setPriority(PRIORITY_FOR_DB_CONNECT);
         dbConnect.start();
     }
 
-    private void setPrimaryStage(Stage stage) throws IOException {
+    private void startPrimaryStage(Stage stage) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/layout/main.fxml"));
         stage.setTitle("Панель администратора");
         stage.setScene(new Scene(parent, 900, 600));

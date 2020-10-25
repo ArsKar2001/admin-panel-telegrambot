@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="traprange">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../traprange_/out/artifacts/traprange_jar/traprange.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -2,11 +2,8 @@ package admin_panel.database;
 
 import admin_panel.Config;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
-
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -14,13 +11,11 @@ import java.sql.SQLException;
 public class DBConnection implements Runnable {
     private static final Logger LOG = Logger.getLogger(DBConnection.class);
     private static final short PAUSE_MS = 10000;
-    private static Connection connection;
-
     @Getter
-    @Setter
-    private Long chatId;
+    protected static Connection connection;
+    public static boolean isConnected = false;
 
-    private void getConnection() {
+    private void startConnection() {
         JSONObject dbConfig = Config.getDBConfig();
 
         String dbHost = (String) dbConfig.get("host");
@@ -33,32 +28,22 @@ public class DBConnection implements Runnable {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             connection = DriverManager.getConnection(url, dbLogin, dbPass);
+            isConnected = true;
             LOG.info("[STARTED] DBConnection. DB url: "+url);
         } catch (ClassNotFoundException | SQLException e) {
-            LOG.error(e.getMessage(), e);
+            LOG.warn(e.getMessage()+" Repeat after "+PAUSE_MS / 1000 +" sec.");
+            isConnected = false;
             try {
                 Thread.sleep(PAUSE_MS);
             } catch (InterruptedException interruptedException) {
                 LOG.error(interruptedException.getMessage(), interruptedException);
             }
-            getConnection();
+            startConnection();
         }
-    }
-
-    public static boolean isExists(Long chatId) {
-        CallableStatement statement;
-        try {
-            statement = connection.prepareCall("{call isCheckChatId(?)}");
-            statement.setLong("chatId", chatId);
-            return statement.execute();
-        } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-        }
-        return false;
     }
 
     @Override
     public void run() {
-        getConnection();
+        startConnection();
     }
 }
