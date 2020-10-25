@@ -3,7 +3,6 @@ package admin_panel.converter;
 import com.giaybac.traprange.PDFTableExtractor;
 import com.giaybac.traprange.entity.Table;
 import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,11 +45,17 @@ public class ConvertPDFToCSV {
     public void convert() {
         LOG.info("[STARTED] Conversion process.");
         File cutPdfFile = cutPdfPages_pdfbox(inputFile);
-        File txtFile = convertPDFtoCSV(cutPdfFile);
+        File txtFile = convertPDFtoCSV_traprange(cutPdfFile);
+        /*....*/
     }
 
-    private File convertPDFtoCSV(File inputFile) {
-        String newFileName = replaceSuffix(inputFile.getName(), ".txt");
+    /**
+     * Конвертирование PDF в CSV через API traprange: https://github.com/thoqbk/traprange
+     * @param inputFile файл PDF
+     * @return
+     */
+    private File convertPDFtoCSV_traprange(File inputFile) {
+        String newFileName = replaceSuffix(inputFile.getName(), ".csv");
         newFileName = "convert_" + newFileName;
         String newPath = inputFile.getAbsoluteFile().getParent()+File.separator+newFileName;
         File outFile = new File(newPath);
@@ -71,6 +76,11 @@ public class ConvertPDFToCSV {
         return outFile;
     }
 
+    /**
+     * Конвертирование PDF в CSV через API pdfBox. https://pdfbox.apache.org/
+     * @param f
+     * @return
+     */
     private File convert_pdfbox(File f) {
         String newFileName = replaceSuffix(f.getName(), ".txt");
         String newPath = f.getAbsoluteFile().getParent()+File.separator+"convert_"+newFileName;
@@ -103,6 +113,11 @@ public class ConvertPDFToCSV {
         }
     }
 
+    /**
+     * Обрезка PDF страницы через API pdfBox (не работает). https://pdfbox.apache.org/
+     * @param f
+     * @return
+     */
     private File cutPdfPages_pdfbox(File f) {
         String newFileName = "cut_" + f.getName();
         String newPath = f.getAbsoluteFile().getParent() + File.separator + newFileName;
@@ -117,7 +132,7 @@ public class ConvertPDFToCSV {
                     float y1 = bBox.getLowerLeftY();
                     float y2 = bBox.getUpperRightY();
 
-                    // Оберезаем лечую часть PDF
+                    // Оберезаем лечую часть страницы PDF
                     bBox.setLowerLeftX(x1 + 60f);
                     bBox.setUpperRightX(x2 / 2f);
                     bBox.setLowerLeftY(y1 + 10f);
@@ -125,7 +140,7 @@ public class ConvertPDFToCSV {
                     page.setCropBox(bBox);
                     outDoc.importPage(page);
 
-                    // Оберезаем правую часть PDF
+                    // Оберезаем правую часть страницы PDF
                     bBox.setLowerLeftX(x2 / 2f + 40f);
                     bBox.setUpperRightX(x2 - 10f);
                     bBox.setLowerLeftY(y1 + 10f);
@@ -142,151 +157,7 @@ public class ConvertPDFToCSV {
         return outFile;
     }
 
-    private File cutPdfPage_iText(File f) {
-        String newFileName = "cut_" + f.getName();
-        String newPath = f.getAbsoluteFile().getParent() + File.separator + newFileName;
-        File outFile = new File(newPath);
-
-        try {
-            PdfReader reader = new PdfReader(new FileInputStream(f));
-            PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(outFile));
-
-            int n = reader.getNumberOfPages();
-            PdfDictionary page;
-            PdfArray media;
-            for (int p = 1; p <= n; p++) {
-                page = reader.getPageN(p);
-                media = page.getAsArray(PdfName.CROPBOX);
-                if (media == null) {
-                    media = page.getAsArray(PdfName.MEDIABOX);
-                }
-                float llx = media.getAsNumber(0).floatValue() + 60f;
-                float lly = media.getAsNumber(1).floatValue() + 10f;
-                float w = media.getAsNumber(2).floatValue() / 2f;
-                float h = media.getAsNumber(3).floatValue();
-                String command = String.format(
-                        "\nq %.2f %.2f %.2f %.2f re W n\nq\n",
-                        llx, lly, w, h);
-                stamper.getUnderContent(p).setLiteral(command);
-                stamper.getOverContent(p).setLiteral("\nQ\nQ\n");
-            }
-            stamper.close();
-            reader.close();
-        } catch (IOException | DocumentException e) {
-            e.printStackTrace();
-        }
-        return outFile;
-    }
-
-//    private File splitIntoHalfPages(File f)
-//    {
-//        String newFileName = "split_" + f.getName();
-//        String newPath = f.getAbsoluteFile().getParent()+File.separator+newFileName;
-//        File outFile = new File(newPath);
-//        try (OutputStream targetStream = new FileOutputStream(outFile))
-//        {
-//            final PdfReader reader = new PdfReader(new FileInputStream(f));
-//            Document document = new Document();
-//            PdfCopy copy = new PdfCopy(document, targetStream);
-//            document.open();
-//            PdfArray leftBox;
-//            PdfArray rightBox;
-//            for (int page = 1; page <= reader.getNumberOfPages(); page++) {
-//                PdfDictionary pageN = reader.getPageN(page);
-//                Rectangle cropBox = reader.getCropBox(page);
-//                leftBox = new PdfArray(new float[]{
-//                        cropBox.getLeft() + (cropBox.getRight() * 0.07f),
-//                        cropBox.getBottom() - (cropBox.getBottom() * 0.05f),
-//                        (cropBox.getLeft() + cropBox.getRight()) / 2.0f,
-//                        cropBox.getTop(cropBox.getTop() * 0.065f)
-//                });
-//                rightBox = new PdfArray(new float[]{
-//                        ((cropBox.getLeft() + cropBox.getRight()) / 2.0f) + ((cropBox.getLeft() + cropBox.getRight()) * 0.05f),
-//                        cropBox.getBottom() - (cropBox.getBottom() * 0.05f),
-//                        cropBox.getRight() - (cropBox.getRight() * 0.022f),
-//                        cropBox.getTop(cropBox.getTop() * 0.065f)
-//                });
-//
-//                PdfImportedPage importedPage = copy.getImportedPage(reader, page);
-//                pageN.put(PdfName.CROPBOX, leftBox);
-//                copy.addPage(importedPage);
-//                pageN.put(PdfName.CROPBOX, rightBox);
-//                copy.addPage(importedPage);
-//            }
-//            document.close();
-//        } catch (IOException | DocumentException e) {
-//            LOG.error(e.getMessage());
-//        }
-//        LOG.debug("Split page to file "+outFile.getName());
-//        return outFile;
-//    }
-
-//    @SneakyThrows
-//    private void manipulatePdf(File f) {
-//        String newFileName = "split_" + f.getName();
-//        String newPath = f.getAbsoluteFile().getParent()+File.separator+newFileName;
-//        File outFile = new File(newPath);
-//        PdfReader reader = new PdfReader(new FileInputStream(f));
-//        PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(outFile));
-//        int n = reader.getNumberOfPages();
-//        PdfDictionary page;
-//        PdfArray media;
-//        for (int p = 1; p <= n; p++) {
-//            page = reader.getPageN(p);
-//            media = page.getAsArray(PdfName.CROPBOX);
-//            if (media == null) {
-//                media = page.getAsArray(PdfName.MEDIABOX);
-//            }
-//            float llx = media.getAsNumber(0).floatValue() + 200;
-//            float lly = media.getAsNumber(1).floatValue() + 200;
-//            float w = media.getAsNumber(2).floatValue() - media.getAsNumber(0).floatValue() - 400;
-//            float h = media.getAsNumber(3).floatValue() - media.getAsNumber(1).floatValue() - 400;
-//            String command = String.format(
-//                    "\nq %.2f %.2f %.2f %.2f re W n\nq\n",
-//                    llx, lly, w, h);
-//            stamper.getUnderContent(p).setLiteral(command);
-//            stamper.getOverContent(p).setLiteral("\nQ\nQ\n");
-//        }
-//        stamper.close();
-//        reader.close();
-//    }
-
-    private void setWidthAndHeightPdfPage(File f) {
-        float width = 8.5f * 72;
-        float height = 11f * 72;
-        float tolerance = 1f;
-
-        PdfReader reader = null;
-        try {
-            reader = new PdfReader(new FileInputStream(f));
-
-            for (int i = 1; i <= reader.getNumberOfPages(); i++) {
-                Rectangle cropBox = reader.getCropBox(i);
-                float widthToAdd = width - cropBox.getWidth();
-                float heightToAdd = height - cropBox.getHeight();
-                if (Math.abs(widthToAdd) > tolerance || Math.abs(heightToAdd) > tolerance) {
-                    float[] newBoxValues = new float[]{
-                            cropBox.getLeft() - widthToAdd / 2,
-                            cropBox.getBottom() - heightToAdd / 2,
-                            cropBox.getRight() + widthToAdd / 2,
-                            cropBox.getTop() + heightToAdd / 2
-                    };
-                    PdfArray newBox = new PdfArray(newBoxValues);
-
-                    PdfDictionary pageDict = reader.getPageN(i);
-                    pageDict.put(PdfName.CROPBOX, newBox);
-                    pageDict.put(PdfName.MEDIABOX, newBox);
-                }
-            }
-
-            PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(f));
-            stamper.close();
-        } catch (IOException | DocumentException e) {
-            LOG.error(e.getMessage());
-        }
-    }
-
-    // Конвертирование через сервис: https://pdftables.com
+    // Конвертирование PDF через сервис: https://pdftables.com
     /*private File getConvertFile(File inputFile, String format, String api_key) {
 
         LOG.info("[STARTED] ConvertPDFToCSV https://pdftables.com. File: "+pathToPDFFile+", format to ."+format);
