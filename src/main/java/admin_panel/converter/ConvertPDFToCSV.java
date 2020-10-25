@@ -53,7 +53,7 @@ public class ConvertPDFToCSV {
     public void convert() {
         LOG.info("[STARTED] Conversion process.");
         File cutPdfFile = cutPdfPages_pdfbox(inputFile);
-        File txtFile = convertPDFtoCSV_traprange(cutPdfFile);
+        File csvFile = convertPDFtoCSV_traprange(cutPdfFile);
         /*....*/
     }
 
@@ -79,27 +79,13 @@ public class ConvertPDFToCSV {
         return outputFile;
     }
 
-    private static String replaceSuffix(String fileName, String suffix) {
-        int index = fileName.indexOf('.');
-        if (index != -1) {
-            int lastIndex = index;
-            while (index != -1) {
-                index = fileName.indexOf('.', lastIndex + 1);
-                if (index != -1) lastIndex = index;
-            }
-            return fileName.substring(0, lastIndex) + suffix;
-        } else {
-            return fileName + "suffix";
-        }
-    }
-
     /**
      * Обрезка PDF страницы через API pdfBox (не работает). https://pdfbox.apache.org/
      * @param f
      * @return
      */
     private File cutPdfPages_pdfbox(File f) {
-        String newFileName = "convert_"+inputFile.getName();
+        String newFileName = "cut_"+inputFile.getName();
         File outputFile = new File(getOutputFileName(newFileName, "pdf"));
 
         try (PDDocument inputDoc = PDDocument.load(f)) {
@@ -142,13 +128,13 @@ public class ConvertPDFToCSV {
      * @return
      */
     private File convertPDFtoCSV_traprange(File inputFile) {
+        String newFileName = "convert_"+inputFile.getName();
+        File outputFile = new File(getOutputFileName(newFileName, "csv"));
         PDFTableExtractor extractor = (new PDFTableExtractor())
                 .setSource(inputFile)
                 .exceptLine(new int[]{0, 1});
-        String newFileName = "convert_"+inputFile.getName();
-        File outputFile = new File(getOutputFileName(newFileName, "csv"));
-
         List<Table> tables = extractor.extract();
+
         try (Writer writer = new FileWriter(outputFile)) {
             for (Table table : tables) {
                 writer.write(table.toString());
@@ -157,7 +143,7 @@ public class ConvertPDFToCSV {
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
-        LOG.debug("Convert the "+ inputFile.getName()+" to "+ outputFile.getName());
+        LOG.debug("convert the "+ inputFile.getName()+" to "+ outputFile.getName());
         return outputFile;
     }
 
