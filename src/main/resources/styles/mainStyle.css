@@ -3,11 +3,13 @@
     -fx-focus-color: transparent;
 }
 
-.button {
+.button-menu {
     -fx-font-size: 14;
     -fx-text-fill: #F4F4F4;
     -fx-font-weight: bold;
     -fx-background-color: #30D6CE;
+    -fx-min-width: 150;
+    -fx-pref-width: 210;
 }
 .button:hover {
     -fx-background-color: #7CDFDA;

@@ -11,7 +11,7 @@ public class BaseController {
         fileChooser.setInitialDirectory(new File("src\\main\\resources\\files\\pdf"));
         fileChooser.setTitle("Импорт данных");
         FileChooser.ExtensionFilter extFilter =
-                new FileChooser.ExtensionFilter("PDF files", "*.pdf");
+                new FileChooser.ExtensionFilter("DOCX files", "*.docx");
         fileChooser.getExtensionFilters().add(extFilter);
         return fileChooser.showOpenDialog(node.getScene().getWindow());
     }

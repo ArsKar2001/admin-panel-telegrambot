@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 
-public class Procedure extends DBConnection {
+public class Procedure extends DB {
     private static final Logger LOG = Logger.getLogger(Procedure.class);
 
     /**
@@ -13,10 +13,10 @@ public class Procedure extends DBConnection {
      * @param chatId идетификатор чата
      * @return
      */
-    public static boolean isExists(Long chatId) {
+    public boolean isExists(Long chatId) {
         CallableStatement statement;
         try {
-            statement = getConnection().prepareCall("{call isCheckChatId(?)}");
+            statement = this.getConnection().prepareCall("{call isCheckChatId(?)}");
             statement.setLong("chatId", chatId);
             return statement.execute();
         } catch (SQLException e) {

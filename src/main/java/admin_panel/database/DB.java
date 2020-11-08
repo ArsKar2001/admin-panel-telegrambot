@@ -8,14 +8,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DBConnection implements Runnable {
-    private static final Logger LOG = Logger.getLogger(DBConnection.class);
+public class DB {
+    private static final Logger LOG = Logger.getLogger(DB.class);
     private static final short PAUSE_MS = 10000;
     @Getter
-    protected static Connection connection;
+    public Connection connection;
     public static boolean isConnected = false;
 
-    private void startConnection() {
+    public void connectingDB() {
         JSONObject dbConfig = Config.getDBConfig();
 
         String dbHost = (String) dbConfig.get("host");
@@ -25,11 +25,12 @@ public class DBConnection implements Runnable {
         String dbLogin = (String) dbConfig.get("login");
 
         String url = "jdbc:mysql://"+dbHost+":"+dbPort+"/"+dbName+"?useSSL=false";
+        LOG.info("[STARTED] DB Thread. DB url: "+url);
         try {
             Class.forName("com.mysql.jdbc.Driver");
             connection = DriverManager.getConnection(url, dbLogin, dbPass);
             isConnected = true;
-            LOG.info("[STARTED] DBConnection. DB url: "+url);
+            LOG.debug("The connection is established...");
         } catch (ClassNotFoundException | SQLException e) {
             LOG.warn(e.getMessage()+" Repeat after "+PAUSE_MS / 1000 +" sec.");
             isConnected = false;
@@ -38,12 +39,7 @@ public class DBConnection implements Runnable {
             } catch (InterruptedException interruptedException) {
                 LOG.error(interruptedException.getMessage(), interruptedException);
             }
-            startConnection();
+            connectingDB();
         }
-    }
-
-    @Override
-    public void run() {
-        startConnection();
     }
 }

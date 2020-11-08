@@ -1,6 +1,6 @@
 package admin_panel.launcher;
 
-import admin_panel.database.DBConnection;
+import admin_panel.database.DB;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,21 +14,13 @@ import java.io.IOException;
 public class Main extends Application {
 
     private static final Logger LOG = Logger.getLogger(Main.class);
-    private static final int PRIORITY_FOR_DB_CONNECT = 1;
 
     @Override
     public void start(Stage stage) throws Exception {
         LOG.info("[STARTED] "+toString()+" application.");
         startPrimaryStage(stage);
-        startDBConnection();
-    }
-
-    private void startDBConnection() {
-        Thread dbConnect = new Thread(new DBConnection());
-        dbConnect.setDaemon(true);
-        dbConnect.setName("DBConnection");
-        dbConnect.setPriority(PRIORITY_FOR_DB_CONNECT);
-        dbConnect.start();
+        DB db = new DB();
+        db.connectingDB();
     }
 
     private void startPrimaryStage(Stage stage) throws IOException {
